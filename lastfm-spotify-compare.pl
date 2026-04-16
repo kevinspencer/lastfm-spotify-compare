@@ -55,6 +55,49 @@ if (-f $spotify_cache && prompt_use_cache('Spotify', $spotify_cache)) {
     print "Cache written to $spotify_cache\n";
 }
 
+# --- Comparison ---
+
+my %lastfm_index   = build_index(\@lastfm_tracks);
+my %spotify_index  = build_index(\@spotify_tracks);
+
+my @only_lastfm  = grep { !exists $spotify_index{$_} } keys %lastfm_index;
+my @only_spotify = grep { !exists $lastfm_index{$_}  } keys %spotify_index;
+
+print "\n=== Loved on Last.fm but not Liked on Spotify (" . scalar(@only_lastfm) . ") ===\n";
+for my $key (sort @only_lastfm) {
+    my $track = $lastfm_index{$key};
+    print "  $track->{artist} - $track->{title}\n";
+}
+
+print "\n=== Liked on Spotify but not Loved on Last.fm (" . scalar(@only_spotify) . ") ===\n";
+for my $key (sort @only_spotify) {
+    my $track = $spotify_index{$key};
+    print "  $track->{artist} - $track->{title}\n";
+}
+
+print "\n=== Matched on both: " . (scalar(keys %lastfm_index) - scalar(@only_lastfm)) . " tracks ===\n";
+
+sub normalize_key {
+    my ($artist, $title) = @_;
+
+    my $key = lc("$artist|$title");
+    $key =~ s/[^\w\s|]//g;  # strip punctuation, keep word chars, spaces, pipe
+    $key =~ s/\s+/ /g;      # collapse whitespace
+    $key =~ s/^\s+|\s+$//g; # trim
+    return $key;
+}
+
+sub build_index {
+    my ($tracks) = @_;
+
+    my %index;
+    for my $track (@{ $tracks }) {
+        my $key = normalize_key($track->{artist}, $track->{title});
+        $index{$key} = $track;
+    }
+    return %index;
+}
+
 sub prompt_use_cache {
     my ($label, $cache_file) = @_;
 
