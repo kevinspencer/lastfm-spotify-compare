@@ -22,6 +22,8 @@ my $config = $yaml->[0];
 
 my $ua = LWP::UserAgent->new();
 
+binmode(STDOUT, ':encoding(UTF-8)');
+
 make_path($cache_dir);
 
 # --- Last.fm ---
@@ -76,6 +78,20 @@ for my $key (sort @only_spotify) {
 }
 
 print "\n=== Matched on both: " . (scalar(keys %lastfm_index) - scalar(@only_lastfm)) . " tracks ===\n";
+
+sub clean_spotify_title {
+    my ($title) = @_;
+
+    # Remove "- YYYY Remaster(ed) (Version)" e.g. "Tracy Jacks - 2012 Remaster"
+    $title =~ s/\s*-\s*\d{4}\s+Remaster(?:ed)?(?:\s+Version)?\s*$//i;
+
+    # Remove "(YYYY Remaster(ed) (Version))" e.g. "Down In A Hole (2022 Remaster)"
+    $title =~ s/\s*\(\d{4}\s+Remaster(?:ed)?(?:\s+Version)?\s*\)\s*$//i;
+
+    $title =~ s/\s+$//;  # trim trailing whitespace
+
+    return $title;
+}
 
 sub normalize_key {
     my ($artist, $title) = @_;
@@ -334,7 +350,7 @@ sub fetch_spotify_tracks {
             my $track = $item->{track};
             push @tracks, {
                 artist => $track->{artists}[0]{name},
-                title  => $track->{name},
+                title  => clean_spotify_title($track->{name}),
             };
         }
 
