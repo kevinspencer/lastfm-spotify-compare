@@ -26,32 +26,65 @@ make_path($cache_dir);
 
 # --- Last.fm ---
 
-print "Fetching Last.fm loved tracks for $config->{lastfm}{username}...\n";
-
-my @lastfm_tracks = fetch_lastfm_tracks($ua, $config);
-
-print "Fetched " . scalar(@lastfm_tracks) . " loved tracks.\n";
-
-open my $lfh, '>', $lastfm_cache or die "Cannot write Last.fm cache: $!";
-print $lfh encode_json(\@lastfm_tracks);
-close $lfh;
-
-print "Cache written to $lastfm_cache\n";
+my @lastfm_tracks;
+if (-f $lastfm_cache && prompt_use_cache('Last.fm', $lastfm_cache)) {
+    @lastfm_tracks = @{ load_cache($lastfm_cache) };
+    print "Loaded " . scalar(@lastfm_tracks) . " tracks from Last.fm cache.\n";
+} else {
+    print "Fetching Last.fm loved tracks for $config->{lastfm}{username}...\n";
+    @lastfm_tracks = fetch_lastfm_tracks($ua, $config);
+    print "Fetched " . scalar(@lastfm_tracks) . " loved tracks.\n";
+    write_cache($lastfm_cache, \@lastfm_tracks);
+    print "Cache written to $lastfm_cache\n";
+}
 
 # --- Spotify ---
 
-print "\nFetching Spotify liked tracks...\n";
+print "\n";
 
-my $access_token   = get_spotify_token($config, $token_cache);
-my @spotify_tracks = fetch_spotify_tracks($ua, $access_token);
+my @spotify_tracks;
+if (-f $spotify_cache && prompt_use_cache('Spotify', $spotify_cache)) {
+    @spotify_tracks = @{ load_cache($spotify_cache) };
+    print "Loaded " . scalar(@spotify_tracks) . " tracks from Spotify cache.\n";
+} else {
+    print "Fetching Spotify liked tracks...\n";
+    my $access_token = get_spotify_token($config, $token_cache);
+    @spotify_tracks  = fetch_spotify_tracks($ua, $access_token);
+    print "Fetched " . scalar(@spotify_tracks) . " liked tracks.\n";
+    write_cache($spotify_cache, \@spotify_tracks);
+    print "Cache written to $spotify_cache\n";
+}
 
-print "Fetched " . scalar(@spotify_tracks) . " liked tracks.\n";
+sub prompt_use_cache {
+    my ($label, $cache_file) = @_;
 
-open my $sfh, '>', $spotify_cache or die "Cannot write Spotify cache: $!";
-print $sfh encode_json(\@spotify_tracks);
-close $sfh;
+    my $mtime = (stat($cache_file))[9];
+    my $age   = time() - $mtime;
+    my $age_str = $age < 3600
+        ? int($age / 60) . " minutes"
+        : int($age / 3600) . " hours";
 
-print "Cache written to $spotify_cache\n";
+    print "$label cache exists (age: $age_str). Use cached data? [y/n] ";
+    chomp(my $answer = <STDIN>);
+    return lc($answer) eq 'y';
+}
+
+sub load_cache {
+    my ($cache_file) = @_;
+
+    open my $fh, '<', $cache_file or die "Cannot read cache $cache_file: $!";
+    my $json = do { local $/; <$fh> };
+    close $fh;
+    return decode_json($json);
+}
+
+sub write_cache {
+    my ($cache_file, $data) = @_;
+
+    open my $fh, '>', $cache_file or die "Cannot write cache $cache_file: $!";
+    print $fh encode_json($data);
+    close $fh;
+}
 
 sub fetch_lastfm_tracks {
     my ($ua, $config) = @_;
