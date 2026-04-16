@@ -46,7 +46,7 @@ print "\n";
 
 my @spotify_tracks;
 if (-f $spotify_cache && prompt_use_cache('Spotify', $spotify_cache)) {
-    @spotify_tracks = @{ load_cache($spotify_cache) };
+    @spotify_tracks = map { $_->{title} = clean_spotify_title($_->{title}); $_ } @{ load_cache($spotify_cache) };
     print "Loaded " . scalar(@spotify_tracks) . " tracks from Spotify cache.\n";
 } else {
     print "Fetching Spotify liked tracks...\n";
@@ -82,21 +82,19 @@ print "\n=== Matched on both: " . (scalar(keys %lastfm_index) - scalar(@only_las
 sub clean_spotify_title {
     my ($title) = @_;
 
-    # "- YYYY Remaster(ed)" e.g. "Tracy Jacks - 2012 Remaster"
-    $title =~ s/\s*-\s*\d{4}\s+(?:Digital\s+)?Remaster(?:ed)?(?:\s+Version)?\s*$//i;
+    # Separator variants: dash, semicolon, or slash
+    # Handles year before or after, optional "Digital", optional "Version"
+    # e.g. "- 2012 Remaster", "- Remastered 2003", "- Remastered",
+    #      "; 2019 Remaster", "/ Remastered 2008", "/ 2003 Digital Remaster"
+    $title =~ s{\s*[-;/]\s*(?:\d{4}\s+)?(?:Digital\s+)?Remaster(?:ed)?(?:\s+\d{4})?(?:\s+Version)?\s*$}{}i;
 
-    # "- Remaster(ed) YYYY" e.g. "Spirits In The Material World - Remastered 2003"
-    # "- Remaster(ed)" no year e.g. "Sister Europe - Remastered"
-    $title =~ s/\s*-\s*(?:Digital\s+)?Remaster(?:ed)?(?:\s+\d{4})?(?:\s+Version)?\s*$//i;
+    # Parenthesized variants with or without year
+    # e.g. "(2022 Remaster)", "(Remastered)", "(Remastered 2003)"
+    $title =~ s{\s*\((?:\d{4}\s+)?(?:Digital\s+)?Remaster(?:ed)?(?:\s+\d{4})?(?:\s+Version)?\s*\)\s*$}{}i;
 
-    # "(YYYY Remaster(ed))" e.g. "Down In A Hole (2022 Remaster)"
-    $title =~ s/\s*\(\d{4}\s+(?:Digital\s+)?Remaster(?:ed)?(?:\s+Version)?\s*\)\s*$//i;
-
-    # "(Remaster(ed))" no year e.g. "The 2 Of Us (Remastered)"
-    $title =~ s/\s*\((?:Digital\s+)?Remaster(?:ed)?(?:\s+Version)?\s*\)\s*$//i;
-
-    # "; YYYY Digital Remaster(ed)" e.g. "Circus Of Death - Fast Version; 2003 Digital Remaster"
-    $title =~ s/\s*;\s*\d{4}\s+(?:Digital\s+)?Remaster(?:ed)?(?:\s+Version)?\s*$//i;
+    # Version/Edit suffixes
+    # e.g. "- Single Version", "- Original Version", "- 7" Edit", "- Original 7" Single Version"
+    $title =~ s{\s*-\s*(?:Original\s+)?(?:\d+["']\s+)?(?:Single\s+)?(?:Version|Edit)\s*$}{}i;
 
     $title =~ s/\s+$//;  # trim trailing whitespace
 
