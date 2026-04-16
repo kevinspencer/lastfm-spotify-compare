@@ -1,0 +1,8 @@
+lastfm:
+  api_key: YOUR_LASTFM_API_KEY
+  username: YOUR_LASTFM_USERNAME
+
+spotify:
+  client_id: YOUR_SPOTIFY_CLIENT_ID
+  client_secret: YOUR_SPOTIFY_CLIENT_SECRET
+  redirect_uri: http://127.0.0.1:8888/callback
