@@ -82,11 +82,21 @@ print "\n=== Matched on both: " . (scalar(keys %lastfm_index) - scalar(@only_las
 sub clean_spotify_title {
     my ($title) = @_;
 
-    # Remove "- YYYY Remaster(ed) (Version)" e.g. "Tracy Jacks - 2012 Remaster"
-    $title =~ s/\s*-\s*\d{4}\s+Remaster(?:ed)?(?:\s+Version)?\s*$//i;
+    # "- YYYY Remaster(ed)" e.g. "Tracy Jacks - 2012 Remaster"
+    $title =~ s/\s*-\s*\d{4}\s+(?:Digital\s+)?Remaster(?:ed)?(?:\s+Version)?\s*$//i;
 
-    # Remove "(YYYY Remaster(ed) (Version))" e.g. "Down In A Hole (2022 Remaster)"
-    $title =~ s/\s*\(\d{4}\s+Remaster(?:ed)?(?:\s+Version)?\s*\)\s*$//i;
+    # "- Remaster(ed) YYYY" e.g. "Spirits In The Material World - Remastered 2003"
+    # "- Remaster(ed)" no year e.g. "Sister Europe - Remastered"
+    $title =~ s/\s*-\s*(?:Digital\s+)?Remaster(?:ed)?(?:\s+\d{4})?(?:\s+Version)?\s*$//i;
+
+    # "(YYYY Remaster(ed))" e.g. "Down In A Hole (2022 Remaster)"
+    $title =~ s/\s*\(\d{4}\s+(?:Digital\s+)?Remaster(?:ed)?(?:\s+Version)?\s*\)\s*$//i;
+
+    # "(Remaster(ed))" no year e.g. "The 2 Of Us (Remastered)"
+    $title =~ s/\s*\((?:Digital\s+)?Remaster(?:ed)?(?:\s+Version)?\s*\)\s*$//i;
+
+    # "; YYYY Digital Remaster(ed)" e.g. "Circus Of Death - Fast Version; 2003 Digital Remaster"
+    $title =~ s/\s*;\s*\d{4}\s+(?:Digital\s+)?Remaster(?:ed)?(?:\s+Version)?\s*$//i;
 
     $title =~ s/\s+$//;  # trim trailing whitespace
 
