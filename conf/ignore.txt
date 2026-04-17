@@ -1,0 +1,6 @@
+# Tracks to ignore when comparing Spotify liked songs not found on Last.fm.
+# Format: Artist - Title
+# Lines starting with # are comments.
+#
+# Example:
+# The Beatles - Hey Jude
