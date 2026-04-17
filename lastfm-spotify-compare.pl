@@ -83,18 +83,19 @@ sub clean_spotify_title {
     my ($title) = @_;
 
     # Separator variants: dash, semicolon, or slash
-    # Handles year before or after, optional "Digital", optional "Version"
+    # Handles Remaster(ed), Digital Master, and year-prefixed Edit
     # e.g. "- 2012 Remaster", "- Remastered 2003", "- Remastered",
-    #      "; 2019 Remaster", "/ Remastered 2008", "/ 2003 Digital Remaster"
-    $title =~ s{\s*[-;/]\s*(?:\d{4}\s+)?(?:Digital\s+)?Remaster(?:ed)?(?:\s+\d{4})?(?:\s+Version)?\s*$}{}i;
+    #      "; 2019 Remaster", "/ Remastered 2008", "/ 2003 Digital Remaster",
+    #      "- 2019 Digital Master", "- 1998 Edit"
+    $title =~ s{\s*[-;/]\s*(?:\d{4}\s+)?(?:(?:Digital\s+)?Remaster(?:ed)?|Digital\s+Master|Edit)(?:\s+\d{4})?(?:\s+Version)?\s*$}{}i;
 
     # Parenthesized variants with or without year
     # e.g. "(2022 Remaster)", "(Remastered)", "(Remastered 2003)"
     $title =~ s{\s*\((?:\d{4}\s+)?(?:Digital\s+)?Remaster(?:ed)?(?:\s+\d{4})?(?:\s+Version)?\s*\)\s*$}{}i;
 
-    # Version/Edit suffixes
-    # e.g. "- Single Version", "- Original Version", "- 7" Edit", "- Original 7" Single Version"
-    $title =~ s{\s*-\s*(?:Original\s+)?(?:\d+["']\s+)?(?:Single\s+)?(?:Version|Edit)\s*$}{}i;
+    # Version/Edit/Mix suffixes
+    # e.g. "- Single Version", "- Original Version", "- 7" Edit", "- Original 7" Single Version", "- Original Mix"
+    $title =~ s{\s*-\s*(?:Original\s+)?(?:\d+["']\s+)?(?:Single\s+)?(?:Version|Edit|Mix)\s*$}{}i;
 
     $title =~ s/\s+$//;  # trim trailing whitespace
 
