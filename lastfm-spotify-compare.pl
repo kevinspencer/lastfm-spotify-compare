@@ -90,7 +90,7 @@ sub clean_spotify_title {
     # e.g. "- 2012 Remaster", "- Remastered 2003", "- Remastered",
     #      "; 2019 Remaster", "/ Remastered 2008", "/ 2003 Digital Remaster",
     #      "- 2019 Digital Master", "- 1998 Edit"
-    $title =~ s{\s*[-;/]\s*(?:\d{4}\s+)?(?:(?:Digital\s+)?Remaster(?:ed)?|Digital\s+Master|Edit)(?:\s+\d{4})?(?:\s+Version)?\s*$}{}i;
+    $title =~ s{\s*[-;/,]\s*(?:\d{4}\s+)?(?:(?:Digital\s+)?Remaster(?:ed)?|Digital\s+Master|Edit)(?:\s+\d{4})?(?:\s+Version)?\s*$}{}i;
 
     # Parenthesized variants with or without year
     # e.g. "(2022 Remaster)", "(Remastered)", "(Remastered 2003)"
