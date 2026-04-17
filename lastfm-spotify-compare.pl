@@ -20,6 +20,8 @@ my $yaml = YAML::Tiny->read($config_file)
     or die "Cannot read config: " . YAML::Tiny->errstr;
 my $config = $yaml->[0];
 
+my $ignore_file = 'conf/ignore.txt';
+
 my $ua = LWP::UserAgent->new();
 
 binmode(STDOUT, ':encoding(UTF-8)');
@@ -59,11 +61,12 @@ if (-f $spotify_cache && prompt_use_cache('Spotify', $spotify_cache)) {
 
 # --- Comparison ---
 
-my %lastfm_index   = build_index(\@lastfm_tracks);
-my %spotify_index  = build_index(\@spotify_tracks);
+my %lastfm_index  = build_index(\@lastfm_tracks);
+my %spotify_index = build_index(\@spotify_tracks);
+my %ignore_index  = load_ignore_list($ignore_file);
 
 my @only_lastfm  = grep { !exists $spotify_index{$_} } keys %lastfm_index;
-my @only_spotify = grep { !exists $lastfm_index{$_}  } keys %spotify_index;
+my @only_spotify = grep { !exists $lastfm_index{$_} && !exists $ignore_index{$_} } keys %spotify_index;
 
 print "\n=== Loved on Last.fm but not Liked on Spotify (" . scalar(@only_lastfm) . ") ===\n";
 for my $key (sort @only_lastfm) {
@@ -100,6 +103,29 @@ sub clean_spotify_title {
     $title =~ s/\s+$//;  # trim trailing whitespace
 
     return $title;
+}
+
+sub load_ignore_list {
+    my ($ignore_file) = @_;
+
+    my %ignore;
+    return %ignore unless -f $ignore_file;
+
+    open my $fh, '<', $ignore_file or die "Cannot read ignore file: $!";
+    while (my $line = <$fh>) {
+        chomp $line;
+        next if $line =~ /^\s*#/;  # skip comments
+        next if $line =~ /^\s*$/;  # skip blank lines
+
+        my ($artist, $title) = split /\s+-\s+/, $line, 2;
+        next unless defined $artist && defined $title;
+
+        my $key = normalize_key($artist, $title);
+        $ignore{$key} = 1;
+    }
+    close $fh;
+
+    return %ignore;
 }
 
 sub normalize_key {
